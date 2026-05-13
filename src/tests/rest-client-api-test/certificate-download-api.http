@@ -1,0 +1,66 @@
+
+############################################################
+### 🟢 PUBLIC — VERIFY & DOWNLOAD USER CERTIFICATE
+############################################################
+POST {{baseUrl}}/certificate/download/verify
+Content-Type: application/json
+
+{
+  "phone": "8817762774",
+  "email": "piyush@example.com"
+}
+
+
+
+############################################################
+### 🔵 ADMIN — ASSIGN CERTIFICATE TO USER
+############################################################
+POST {{baseUrl}}/certificate/download/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "certificate": "6935299ae9a99e3479126493",
+  "name": "Piyush Kumar",
+  "phone": "8817762774",
+  "email": "piyush@example.com",
+  "pdfUrl": "https://yourcdn.com/certificates/piyush.pdf"
+}
+
+
+############################################################
+### 🔵 ADMIN — GET ALL USER CERTIFICATES (PAGINATED)
+############################################################
+GET {{baseUrl}}/certificate/download/admin?page=1&limit=10
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+############################################################
+### 🔵 ADMIN — GET SINGLE USER CERTIFICATE
+############################################################
+GET {{baseUrl}}/certificate/download/67910cafb93e7e6f2bb81f22
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+
+############################################################
+### 🔵 ADMIN — UPDATE USER CERTIFICATE
+############################################################
+PUT {{baseUrl}}/certificate/download/67910cafb93e7e6f2bb81f22
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "pdfUrl": "https://yourcdn.com/certificates/piyushUpdated.pdf"
+}
+
+
+
+############################################################
+### 🔵 ADMIN — DELETE USER CERTIFICATE
+############################################################
+DELETE {{baseUrl}}/certificate/download/67910cafb93e7e6f2bb81f22
+Authorization: Bearer {{token}}

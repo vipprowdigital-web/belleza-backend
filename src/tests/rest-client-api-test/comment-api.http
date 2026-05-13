@@ -1,0 +1,55 @@
+### ================================
+### Comment API (Blog Comments)
+### Blog Id
+#{{blogId}} = "68f4805fc55c095a7cffc51f";
+
+### ================================
+
+### Add a Comment or Reply (Protected)
+POST {{baseUrl}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "blogId": "68f4805fc55c095a7cffc51f",
+  "parentComment": null,
+  "content": "This is a top-level comment."
+}
+
+###
+
+### Get All Comments for a Blog (Public)
+GET {{baseUrl}}/comments/68f4805fc55c095a7cffc51f
+Accept: application/json
+
+###
+
+### Like a Comment (Protected)
+PATCH {{baseUrl}}/comments/68f647c7e05d406056a3306e/like
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Dislike a Comment (Protected)
+PATCH {{baseUrl}}/comments/68f647c7e05d406056a3306e/dislike
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Edit Comment (Protected)
+PATCH {{baseUrl}}/comments/68f647c7e05d406056a3306e
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "Updated comment content."
+}
+
+###
+
+### Delete Comment (Protected)
+DELETE {{baseUrl}}/comments/68f647c7e05d406056a3306e
+Authorization: Bearer {{token}}
+Accept: application/json

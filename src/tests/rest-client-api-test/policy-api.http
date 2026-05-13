@@ -1,0 +1,32 @@
+### Get All Active Policies - Public
+GET {{baseUrl}}/policy/public
+Accept: application/json
+
+
+### Get Active Policy by ID - Public
+GET {{baseUrl}}/policy/public/69007aa57bc127404d356930
+Accept: application/json
+
+
+### Get All Policies - Protected
+GET {{baseUrl}}/policy/admin
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### Modify Policy - Protected (Create or Update)
+POST {{baseUrl}}/policy/admin/save
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Privacy Policy",
+  "slug": "privacy-policy",
+  "description": "Privacy Policy Description",
+  "isActive": true
+}
+
+### Destroy Policy By Id - Protected (Delete)
+DELETE  {{baseUrl}}/policy/admin/destroy/68f9d93933ce5ff1d396e6fe
+Authorization: Bearer {{token}}
+Content-Type: application/json

@@ -1,0 +1,22 @@
+### Get App Config (Public)
+GET {{baseUrl}}/app-config/public
+Accept: application/json
+
+
+### Get App Config (Protected)
+GET {{baseUrl}}/app-config
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Modify / Create App Config (Protected)
+POST {{baseUrl}}/app-config
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "appName": "My Test App",
+  "email": "support@example.com",
+  "phoneNumber": "+91 9876543210"
+}

@@ -1,0 +1,91 @@
+### ===================================
+### 🔐 ADMIN — Get All Certificates
+### ===================================
+GET {{baseUrl}}/certificate
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### ===================================
+### 🌐 PUBLIC — Get All Active Certificates
+### ===================================
+GET {{baseUrl}}/certificate/active
+Accept: application/json
+
+
+### ===================================
+### 🌐 PUBLIC — Get Certificate By ID
+### ===================================
+GET {{baseUrl}}/certificate/69007b416899d46d9197c430
+Accept: application/json
+
+
+### ===================================
+### 🔐 ADMIN — Delete Certificate
+### ===================================
+DELETE {{baseUrl}}/certificate/68f77b11341816f30871aedd
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### ===================================
+### 🔐 ADMIN — Create Certificate
+### ===================================
+POST {{baseUrl}}/certificate
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="title"
+
+Smart Home Setup Certificate
+--boundary
+Content-Disposition: form-data; name="category"
+
+6715cf32f8d4b1234567890a
+--boundary
+Content-Disposition: form-data; name="isActive"
+
+true
+--boundary
+Content-Disposition: form-data; name="certificateMedia"; filename="certificate1.jpg"
+Content-Type: image/jpeg
+
+< ./certificate1.jpg
+--boundary--
+
+
+############################################
+### 🔐 ADMIN — Update Certificate (PUT)
+############################################
+PUT {{baseUrl}}/certificate/6715cf32f8d4b1234567890b
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="title"
+
+Updated Certificate Title
+--boundary
+Content-Disposition: form-data; name="isActive"
+
+false
+--boundary
+Content-Disposition: form-data; name="certificateMedia"; filename="certificate2.jpg"
+Content-Type: image/jpeg
+
+< ./certificate2.jpg
+--boundary--
+
+
+############################################
+### 🔐 ADMIN — Partial Update Certificate (PATCH)
+############################################
+PATCH {{baseUrl}}/certificate/6715cf32f8d4b1234567890b
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Partially Updated Certificate Title",
+  "isActive": true
+}

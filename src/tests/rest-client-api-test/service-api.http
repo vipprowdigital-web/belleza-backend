@@ -1,0 +1,109 @@
+# @baseUrl = http://localhost:5000/api/v1
+# @token = YOUR_JWT_TOKEN_HERE
+@id = 6910ca2a00f2960b30aca1d6
+
+### ============================================================
+### 🟢 PUBLIC ROUTES
+### ============================================================
+
+### 1️⃣ Get All Active Services (Public)
+GET {{baseUrl}}/service/public
+Accept: application/json
+
+
+### 2️⃣ Get Single Active Service by ID (Public)
+GET {{baseUrl}}/service/public/{{id}}
+Accept: application/json
+
+
+### ============================================================
+### 🔒 ADMIN ROUTES (Protected)
+### ============================================================
+
+### 3️⃣ Get All Services (Admin - Paginated & Searchable)
+GET {{baseUrl}}/service?page=1&limit=10&search=
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### 4️⃣ Get Single Service by ID (Admin)
+GET {{baseUrl}}/service/{{id}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+
+### 5️⃣ Create New Service (Admin)
+POST {{baseUrl}}/service
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: multipart/form-data; boundary=BOUNDARY
+
+--BOUNDARY
+Content-Disposition: form-data; name="title"
+
+AC Repair
+--BOUNDARY
+Content-Disposition: form-data; name="subHeading"
+
+Expert Air Conditioner Repair & Maintenance
+--BOUNDARY
+Content-Disposition: form-data; name="description"
+
+We provide professional AC repair, cleaning, and gas refilling services at affordable rates.
+--BOUNDARY
+Content-Disposition: form-data; name="isActive"
+
+true
+--BOUNDARY
+Content-Disposition: form-data; name="thumbnail"; filename="test.png"
+Content-Type: image/png
+
+< ./test-media/test.png
+--BOUNDARY--
+
+
+### 6️⃣ Update Entire Service (PUT)
+PUT {{baseUrl}}/service/673b5e52b2a1eacb1f08f94d
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: multipart/form-data; boundary=BOUNDARY
+
+--BOUNDARY
+Content-Disposition: form-data; name="title"
+
+AC Repair & Installation
+--BOUNDARY
+Content-Disposition: form-data; name="subHeading"
+
+Affordable AC Installation and Maintenance
+--BOUNDARY
+Content-Disposition: form-data; name="description"
+
+Updated description for AC services including installation, maintenance, and cleaning.
+--BOUNDARY
+Content-Disposition: form-data; name="isActive"
+
+true
+--BOUNDARY
+Content-Disposition: form-data; name="thumbnail"; filename="new-thumbnail.jpg"
+Content-Type: image/jpeg
+
+< ./test-media/test.png
+--BOUNDARY--
+
+### 7️⃣ Partially Update Service (PATCH)
+PATCH {{baseUrl}}/service/{{id}}
+Authorization: Bearer {{token}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "isActive": false,
+  "title": "Inactive AC Service"
+}
+
+
+### 8️⃣ Delete Service (Admin)
+DELETE {{baseUrl}}/service/{{id}}
+Authorization: Bearer {{token}}
+Accept: application/json

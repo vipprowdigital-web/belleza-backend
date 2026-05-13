@@ -1,0 +1,44 @@
+### Get All Categories (Public)
+GET {{baseUrl}}/categories/public
+Accept: application/json
+
+
+### Get All Categories (Protected)
+GET {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Create New Category (Protected)
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Mobile Phones",
+  "description": "All smartphone-related services",
+  "isActive": true,
+  "isFeatured": true,
+  "showInMenu": true
+}
+
+###
+
+### Update Category (Protected)
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "68f1fa3d26526af6f64d8512",
+  "name": "Updated Category Name",
+  "description": "Updated description"
+}
+
+###
+
+### Delete Category by Slug (Protected)
+DELETE {{baseUrl}}/categories/mobile-phones
+Authorization: Bearer {{token}}
+Accept: application/json

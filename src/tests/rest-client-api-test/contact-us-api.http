@@ -1,0 +1,37 @@
+### Submit Contact Us Form - Public
+POST {{baseUrl}}/contact/submit
+Content-Type: application/json
+
+{
+    "name": "Piyush Kumar Raikwar",
+    "email": "piyushraikwar289@gmail.com",
+    "phone": "8817762774",
+    "subject": "General Inquiry",
+    "message": "Hello",
+    "ipAddress": "123.123.123.123",
+    "userAgent": "Mozilla/5.0"
+}
+
+### Get All Contact Us Messages - Protected
+GET {{baseUrl}}/contact/admin
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get Single Contact Us Message by ID - Protected
+GET {{baseUrl}}/contact/admin/68fa0fa44fb0b951cf0d80cc
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Delete Single Contact Us Message by ID - Protected
+DELETE {{baseUrl}}/contact/admin/destroy/68fa0c6d416a674cbca5fe6f
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Admin Respond to Contact Us Message - Protected
+POST {{baseUrl}}/contact/admin/respond/68fa0fa44fb0b951cf0d80cc
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "message": "Thank you for contacting us. We have resolved your query."
+}

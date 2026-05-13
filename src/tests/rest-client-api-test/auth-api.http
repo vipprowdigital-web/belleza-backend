@@ -1,0 +1,28 @@
+### Register User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Piyush Kumar Raikwar",
+  "email": "piyushraikwar289@gmail.com",
+  "password": "admin@123"
+}
+
+###
+
+### Login User
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "piyushraikwar289@gmail.com",
+  "password": "admin@123"
+}
+
+
+###
+
+### Logout Profile (Protected)
+POST  {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+Accept: application/json

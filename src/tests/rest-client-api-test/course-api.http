@@ -1,0 +1,136 @@
+// src/tests/res-client-api-test/course-api.http
+### Base URL
+/* ================================
+   🟢 PUBLIC ROUTES
+================================ */
+
+### Get All Active Courses
+GET {{baseUrl}}/course
+Accept: application/json
+
+###
+
+### Get Course by ID
+GET {{baseUrl}}/course/69258bc54a4b6921ecababdf
+Accept: application/json
+
+### Get All Courses Name
+GET {{baseUrl}}/course/public/name
+Accept: application/json
+
+
+###
+
+/* ================================
+   🔒 ADMIN ROUTES
+================================ */
+
+### Get All Courses (Admin)
+GET {{baseUrl}}/course/admin/all
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Create New Course (with thumbnail & gallery)
+POST {{baseUrl}}/course/admin
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----CourseFormBoundary7MA4YWxkTrZu0gW
+
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+My Test Course
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="category"
+
+670f242b79f2f23f9ab61c9a
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="short_description"
+
+This is a short summary of the course.
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="description"
+
+Full course description goes here...
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="level"
+
+beginner
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="duration"
+
+6 hours
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="price"
+
+499
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sale_price"
+
+299
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="lessons_count"
+
+15
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="intro_video"
+
+https://youtu.be/test-video
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="thumbnail"; filename="thumbnail.jpg"
+Content-Type: image/jpeg
+
+< ./test-media/test.png
+------CourseFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="gallery_images"; filename="gallery1.jpg"
+Content-Type: image/jpeg
+
+< ./test-media/test.png
+------CourseFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+### Update Course (PUT)
+PUT {{baseUrl}}/course/admin/69258bc54a4b6921ecababdf
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----CourseFormBoundaryUpdate
+
+------CourseFormBoundaryUpdate
+Content-Disposition: form-data; name="title"
+
+Updated Course Title
+------CourseFormBoundaryUpdate
+Content-Disposition: form-data; name="remove_gallery"
+
+["https://cloudinary.com/image/old1.jpg"]
+------CourseFormBoundaryUpdate
+Content-Disposition: form-data; name="keep_gallery"
+
+["https://cloudinary.com/image/keep1.jpg"]
+------CourseFormBoundaryUpdate
+Content-Disposition: form-data; name="thumbnail"; filename="updated-thumb.jpg"
+Content-Type: image/jpeg
+
+< ./test-media/test.png
+------CourseFormBoundaryUpdate--
+
+###
+
+### Partial Update (PATCH)
+PATCH {{baseUrl}}/course/admin/69258bc54a4b6921ecababdf
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Updated Title via PATCH",
+  "price": 699,
+  "isFeature": true
+}
+
+###
+
+### Delete Course
+DELETE {{baseUrl}}/course/admin/69258bc54a4b6921ecababdf
+Authorization: Bearer {{token}}
+Accept: application/json

@@ -1,0 +1,60 @@
+### Get All Gallery - (Admin)
+GET {{baseUrl}}/gallery
+Accept: application/json
+
+### Get All Active Gallery - (Public)
+GET {{baseUrl}}/gallery/active
+Accept: application/json
+
+### Get Gallery By ID - (Public)
+GET {{baseUrl}}/gallery/68f77b11341816f30871aedd
+Accept: application/json
+
+### Delect Gallery By ID - (Admin)
+DELETE {{baseUrl}}/gallery/68f77b11341816f30871aedd
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Modifiy Gallery
+POST {{baseUrl}}/gallery
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+--boundary
+Content-Disposition: form-data; name="title"
+
+Smart Home Setup Gallery
+--boundary
+Content-Disposition: form-data; name="category"
+
+6715cf32f8d4b1234567890a
+--boundary
+Content-Disposition: form-data; name="isActive"
+
+true
+--boundary
+Content-Disposition: form-data; name="galleryMedia"; filename="gallery1.jpg"
+Content-Type: image/jpeg
+
+##################################
+### ✏️ Update Existing Gallery
+##################################
+POST {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+--boundary
+Content-Disposition: form-data; name="id"
+
+6715cf32f8d4b1234567890b
+--boundary
+Content-Disposition: form-data; name="title"
+
+Updated Gallery Title
+--boundary
+Content-Disposition: form-data; name="isActive"
+
+false
+--boundary
+Content-Disposition: form-data; name="galleryMedia"; filename="gallery2.jpg"
+Content-Type: image/jpeg

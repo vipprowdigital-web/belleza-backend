@@ -1,0 +1,44 @@
+### Get All domains (Public)
+GET {{baseUrl}}/domains/public
+Accept: application/json
+
+
+### Get All domains (Protected)
+GET {{baseUrl}}/domains
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### Create New domain (Protected)
+POST {{baseUrl}}/domains
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Mobile Phones",
+  "description": "All smartphone-related services",
+  "isActive": true,
+  "isFeatured": true,
+  "showInMenu": true
+}
+
+###
+
+### Update domain (Protected)
+POST {{baseUrl}}/domains
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "68f1fa3d26526af6f64d8512",
+  "name": "Updated Category Name",
+  "description": "Updated description"
+}
+
+###
+
+### Delete domain by id (Protected)
+DELETE {{baseUrl}}/domains/mobile-phones
+Authorization: Bearer {{token}}
+Accept: application/json
