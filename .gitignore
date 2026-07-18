@@ -1,3 +1,4 @@
 *.ev*
 *.env*
 /node_modules
+.vscode
