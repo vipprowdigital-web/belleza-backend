@@ -22,12 +22,112 @@ const formatErrors = (err) => {
    🟢 PUBLIC CONTROLLERS
 ============================ */
 
+// export const getAllActiveCourses = async (req, res) => {
+//   try {
+//     const page = Number(req.query.page) || 1;
+//     const limit = Number(req.query.limit) || 10;
+//     const sortBy = req.query.sortBy || "createdAt"; // Added
+//     const sortOrder = req.query.sortOrder || "desc"; // Added: "asc" or "desc"
+
+//     const search = req.query.search?.trim() || "";
+//     const categories = req.query.categories?.split(",") || [];
+
+//     // ------------------------------
+//     // Build Match Query
+//     // ------------------------------
+//     const matchQuery = { isActive: true };
+
+//     // FIX: Convert category IDs to ObjectIds
+//     if (categories.length > 0 && categories[0] !== "") {
+//       matchQuery.category = {
+//         $in: categories.map((id) => new mongoose.Types.ObjectId(id)),
+//       };
+//     }
+
+//     // Search Filter (title, description, category name)
+//     const searchQuery = search
+//       ? {
+//           $or: [
+//             { title: { $regex: search, $options: "i" } },
+//             { description: { $regex: search, $options: "i" } },
+//             { "category.name": { $regex: search, $options: "i" } },
+//           ],
+//         }
+//       : {};
+
+//     // ------------------------------
+//     // DYNAMIC SORT
+//     // ------------------------------
+//     const sortDirection = sortOrder === "asc" ? 1 : -1;
+
+//     // ------------------------------
+//     // AGGREGATION PIPELINE
+//     // ------------------------------
+//     const pipeline = [
+//       { $match: matchQuery },
+
+//       {
+//         $lookup: {
+//           from: "categories",
+//           localField: "category",
+//           foreignField: "_id",
+//           as: "category",
+//         },
+//       },
+
+//       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+
+//       { $match: searchQuery },
+//       { $sort: { [sortBy]: sortDirection } }, // ✅ Dynamic sort
+//       { $skip: (page - 1) * limit },
+//       { $limit: limit },
+//     ];
+
+//     const countPipeline = [
+//       { $match: matchQuery },
+//       {
+//         $lookup: {
+//           from: "categories",
+//           localField: "category",
+//           foreignField: "_id",
+//           as: "category",
+//         },
+//       },
+//       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+//       { $match: searchQuery },
+//       { $count: "total" },
+//     ];
+
+//     const [courses, countResult] = await Promise.all([
+//       Course.aggregate(pipeline),
+//       Course.aggregate(countPipeline),
+//     ]);
+
+//     res.status(200).json({
+//       success: true,
+//       data: courses,
+//       pagination: {
+//         total: countResult[0]?.total || 0,
+//         page,
+//         limit,
+//         totalPages: Math.ceil((countResult[0]?.total || 0) / limit),
+//       },
+//     });
+//   } catch (err) {
+//     console.error("❌ Error fetching courses:", err);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// };
+
 export const getAllActiveCourses = async (req, res) => {
   try {
+    // Check if client explicitly wants all records without pagination
+    const fetchAll = req.query.all === "true" || req.query.limit === "0";
+
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const sortBy = req.query.sortBy || "createdAt"; // Added
-    const sortOrder = req.query.sortOrder || "desc"; // Added: "asc" or "desc"
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder || "desc";
 
     const search = req.query.search?.trim() || "";
     const categories = req.query.categories?.split(",") || [];
@@ -37,7 +137,6 @@ export const getAllActiveCourses = async (req, res) => {
     // ------------------------------
     const matchQuery = { isActive: true };
 
-    // FIX: Convert category IDs to ObjectIds
     if (categories.length > 0 && categories[0] !== "") {
       matchQuery.category = {
         $in: categories.map((id) => new mongoose.Types.ObjectId(id)),
@@ -55,9 +154,6 @@ export const getAllActiveCourses = async (req, res) => {
         }
       : {};
 
-    // ------------------------------
-    // DYNAMIC SORT
-    // ------------------------------
     const sortDirection = sortOrder === "asc" ? 1 : -1;
 
     // ------------------------------
@@ -65,7 +161,6 @@ export const getAllActiveCourses = async (req, res) => {
     // ------------------------------
     const pipeline = [
       { $match: matchQuery },
-
       {
         $lookup: {
           from: "categories",
@@ -74,14 +169,16 @@ export const getAllActiveCourses = async (req, res) => {
           as: "category",
         },
       },
-
       { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-
       { $match: searchQuery },
-      { $sort: { [sortBy]: sortDirection } }, // ✅ Dynamic sort
-      { $skip: (page - 1) * limit },
-      { $limit: limit },
+      { $sort: { [sortBy]: sortDirection } },
     ];
+
+    // Only apply skip and limit if fetchAll is false
+    if (!fetchAll) {
+      pipeline.push({ $skip: (page - 1) * limit });
+      pipeline.push({ $limit: limit });
+    }
 
     const countPipeline = [
       { $match: matchQuery },
@@ -103,14 +200,16 @@ export const getAllActiveCourses = async (req, res) => {
       Course.aggregate(countPipeline),
     ]);
 
+    const total = countResult[0]?.total || 0;
+
     res.status(200).json({
       success: true,
       data: courses,
       pagination: {
-        total: countResult[0]?.total || 0,
-        page,
-        limit,
-        totalPages: Math.ceil((countResult[0]?.total || 0) / limit),
+        total,
+        page: fetchAll ? 1 : page,
+        limit: fetchAll ? total : limit,
+        totalPages: fetchAll ? 1 : Math.ceil(total / limit),
       },
     });
   } catch (err) {
@@ -251,7 +350,7 @@ export const createCourse = async (req, res) => {
     if (req.files?.thumbnail?.[0]?.path) {
       const upload = await uploadToCloudinary(
         req.files.thumbnail[0].path,
-        "course/thumbnails"
+        "course/thumbnails",
       );
       thumbnailUrl = upload.secure_url;
       uploaded.thumbnail = upload.public_id;
@@ -333,7 +432,7 @@ export const updateCourse = async (req, res) => {
 
       const up = await uploadToCloudinary(
         req.files.thumbnail[0].path,
-        "course/thumbnails"
+        "course/thumbnails",
       );
       course.thumbnail = up.secure_url;
     }
