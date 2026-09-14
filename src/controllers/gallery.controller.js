@@ -4,18 +4,18 @@ import {
   uploadToCloudinary,
   destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
+import Branch from "../models/branch.model.js";
 
 /* ================================
-   🟢 PUBLIC CONTROLLERS
+   🟢 FRONTEND CONTROLLERS (Display Data)
    ================================ */
 
 /**
- * @desc Get all active galleries (Public)
- * @route GET /api/v1/gallery/active?page=1&limit=10&search=&sortBy=createdAt&sortOrder=desc
+ * Get galleries for frontend by subdomain (branch-specific, active only)
  */
-export const getAllActiveGallery = async (req, res) => {
+export const getFrontendGalleries = async (req, res) => {
   try {
-    // Extract query parameters
+    const { subdomain } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search?.trim() || "";
@@ -23,16 +23,34 @@ export const getAllActiveGallery = async (req, res) => {
     const sortBy = req.query.sortBy || "createdAt";
     const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
+    // Validate subdomain
+    if (!subdomain) {
+      return res.status(400).json({
+        success: false,
+        message: "Subdomain is required as query parameter.",
+      });
+    }
+
+    // Find branch by subdomain
+    const branch = await Branch.findOne({ subdomain: subdomain.toLowerCase() }).lean();
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: "Branch not found.",
+      });
+    }
+
     const skip = (page - 1) * limit;
 
-    // Build filter for search + only active galleries
-    const filter = { isActive: true };
+    // Build filter for search + only active galleries + branchId
+    const filter = { isActive: true, branchId: branch._id };
     if (search) {
       filter.title = { $regex: search, $options: "i" };
     }
 
     if (category) {
-      filter.category = category; // ✅ STRING MATCH
+      filter.category = category;
     }
 
     // Count total
@@ -57,7 +75,7 @@ export const getAllActiveGallery = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching active galleries:", error.message);
+    console.error("Error fetching galleries for frontend:", error.message);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -66,6 +84,12 @@ export const getAllActiveGallery = async (req, res) => {
   }
 };
 
+/* ================================
+   🔒 ADMIN CONTROLLERS (Manage Data)
+   ================================ */
+
+
+
 /**
  * @desc Get single gallery by ID (Public)
  * @route GET /api/v1/gallery/:id
@@ -73,8 +97,14 @@ export const getAllActiveGallery = async (req, res) => {
 export const getGalleryById = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
 
     const gallery = await Gallery.findById(id)
+      .where({ branchId })
       .lean();
 
     if (!gallery)
@@ -112,9 +142,14 @@ export const getAllGallery = async (req, res) => {
     const sortBy = req.query.sortBy || "createdAt";
     const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
     const skip = (page - 1) * limit;
+    const branchId = req.user?.branchId;
 
-    // Build search filter
-    const filter = {};
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
+    // Build search filter with branchId
+    const filter = { branchId };
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -160,15 +195,21 @@ export const getAllGallery = async (req, res) => {
 export const createGallery = async (req, res) => {
   try {
     const { title, category, isActive = true } = req.body;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     if (!title?.trim())
       return res.status(400).json({ message: "Title is required." });
 
     const slug = slugify(title, { lower: true, strict: true });
-    const exists = await Gallery.findOne({ slug });
+    const exists = await Gallery.findOne({ slug, branchId });
     if (exists)
       return res
         .status(400)
-        .json({ message: "Gallery already exists with this title." });
+        .json({ message: "Gallery already exists with this title in your branch." });
 
     let galleryMediaUrl = null;
     if (req.files?.galleryMedia?.[0]?.path) {
@@ -185,6 +226,7 @@ export const createGallery = async (req, res) => {
       category,
       image: galleryMediaUrl,
       isActive,
+      branchId,
       createdBy: req.user._id,
     });
 
@@ -210,11 +252,22 @@ export const createGallery = async (req, res) => {
 export const updateGallery = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     const { title, category, isActive } = req.body;
 
     const gallery = await Gallery.findById(id);
     if (!gallery)
       return res.status(404).json({ message: "Gallery not found." });
+
+    // Verify gallery belongs to user's branch
+    if (gallery.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({ message: "Unauthorized. This gallery belongs to a different branch." });
+    }
 
     // Upload new image if provided
     if (req.files?.galleryMedia?.[0]?.path) {
@@ -268,11 +321,22 @@ export const updateGallery = async (req, res) => {
 export const partiallyUpdateGallery = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     const updates = req.body;
 
     const gallery = await Gallery.findById(id);
     if (!gallery)
       return res.status(404).json({ message: "Gallery not found." });
+
+    // Verify gallery belongs to user's branch
+    if (gallery.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({ message: "Unauthorized. This gallery belongs to a different branch." });
+    }
 
     Object.entries(updates).forEach(([key, value]) => {
       if (key !== "_id" && value !== undefined) gallery[key] = value;
@@ -303,10 +367,20 @@ export const partiallyUpdateGallery = async (req, res) => {
 export const destroyGalleryById = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
 
     const gallery = await Gallery.findById(id);
     if (!gallery)
       return res.status(404).json({ message: "Gallery not found." });
+
+    // Verify gallery belongs to user's branch
+    if (gallery.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({ message: "Unauthorized. This gallery belongs to a different branch." });
+    }
 
     if (gallery.image) {
       try {

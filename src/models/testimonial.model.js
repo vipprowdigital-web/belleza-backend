@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const {Schema} = mongoose;
+
 // ✅ Define schema with strict validation and performance optimizations
 const testimonialSchema = new mongoose.Schema(
   {
@@ -97,6 +99,13 @@ const testimonialSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
+    // Branch Link
+    branchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true, 
+    }
   },
   {
     timestamps: true,

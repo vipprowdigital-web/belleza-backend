@@ -1,22 +1,20 @@
 import ContactUs from "../models/contactus.model.js";
-import mongoose from "mongoose";
+import Branch from "../models/branch.model.js";
 
 /* ============================================================
-   📌 CREATE ContactUs (Public)
+   � FRONTEND CONTROLLERS (Submit Data - No Auth Required)
 ============================================================ */
+
+/**
+ * Submit contact us form (frontend - public submission with subdomain)
+ */
 export const createContactUs = async (req, res) => {
   try {
-    const { name, phone, message, courseName, preferredLocation } = req.body;
+    const { name, phone, message, courseName, preferredLocation, subdomain } = req.body;
+
     console.log("Req data: ", req.body);
 
     // Validate required fields
-    // if (!type) {
-    //   return res.status(400).json({
-    //     status: "error",
-    //     message: "Form type is required.",
-    //   });
-    // }
-
     if (!name || !phone) {
       return res.status(400).json({
         status: "error",
@@ -24,35 +22,35 @@ export const createContactUs = async (req, res) => {
       });
     }
 
-    // if (services && Array.isArray(services)) {
-    //   const isInvalid = services.some(
-    //     (id) => !mongoose.Types.ObjectId.isValid(id),
-    //   );
+    // Validate subdomain is provided
+    if (!subdomain) {
+      return res.status(400).json({
+        status: "error",
+        message: "Subdomain is required.",
+      });
+    }
 
-    //   if (isInvalid) {
-    //     return res.status(400).json({
-    //       status: "error",
-    //       message: "Invalid Service ID detected.",
-    //     });
-    //   }
-    // }
+    // Find branch by subdomain
+    const branch = await Branch.findOne({ subdomain: subdomain.toLowerCase() }).lean();
 
-    // ---------------------------------------------
-    // 🌟 CREATE DOCUMENT
-    // ---------------------------------------------
+    if (!branch) {
+      return res.status(404).json({
+        status: "error",
+        message: "Branch not found.",
+      });
+    }
+
+    // Create contact us submission
     const contact = await ContactUs.create({
       name,
-      // email,
       phone: phone || null,
       courseName,
       preferredLocation,
-      // subject: subject || null,
       message,
-      // meta: meta || {},
-      // services: services || null, // 👈 ADD THIS
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
-      createdBy: req.user?._id || null,
+      branchId: branch._id,
+      createdBy: null,
     });
 
     return res.status(201).json({
@@ -69,6 +67,10 @@ export const createContactUs = async (req, res) => {
 };
 
 /* ============================================================
+   🔒 ADMIN CONTROLLERS (Manage Submissions - Auth Required)
+============================================================ */
+
+/* ============================================================
    📌 GET ALL ContactUs (Admin)
 ============================================================ */
 export const getAllContactUs = async (req, res) => {
@@ -76,10 +78,18 @@ export const getAllContactUs = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
+    const branchId = req.user?.branchId;
 
-    const total = await ContactUs.countDocuments();
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
 
-    const messages = await ContactUs.find()
+    const total = await ContactUs.countDocuments({ branchId });
+
+    const messages = await ContactUs.find({ branchId })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -109,7 +119,18 @@ export const getAllContactUs = async (req, res) => {
 ============================================================ */
 export const getContactUsById = async (req, res) => {
   try {
-    const contact = await ContactUs.findById(req.params.id).lean();
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
+
+    const contact = await ContactUs.findById(req.params.id)
+      .where({ branchId })
+      .lean();
 
     if (!contact) {
       return res.status(404).json({
@@ -135,17 +156,35 @@ export const getContactUsById = async (req, res) => {
 ============================================================ */
 export const updateContactUs = async (req, res) => {
   try {
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
+
     const data = req.body;
 
-    const updated = await ContactUs.findByIdAndUpdate(req.params.id, data, {
-      new: true,
-    });
-
-    if (!updated) {
+    const contact = await ContactUs.findById(req.params.id);
+    if (!contact) {
       return res
         .status(404)
         .json({ status: "error", message: "Contact not found." });
     }
+
+    // Verify contact belongs to user's branch
+    if (contact.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({
+        status: "error",
+        message: "Unauthorized. This contact belongs to a different branch.",
+      });
+    }
+
+    const updated = await ContactUs.findByIdAndUpdate(req.params.id, data, {
+      new: true,
+    });
 
     return res.status(200).json({
       status: "success",
@@ -165,19 +204,37 @@ export const updateContactUs = async (req, res) => {
 ============================================================ */
 export const partiallyUpdateContactUs = async (req, res) => {
   try {
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
+
     const data = req.body;
+
+    const contact = await ContactUs.findById(req.params.id);
+    if (!contact) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Contact not found." });
+    }
+
+    // Verify contact belongs to user's branch
+    if (contact.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({
+        status: "error",
+        message: "Unauthorized. This contact belongs to a different branch.",
+      });
+    }
 
     const updated = await ContactUs.findByIdAndUpdate(
       req.params.id,
       { $set: data },
       { new: true },
     );
-
-    if (!updated) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Contact not found." });
-    }
 
     return res.status(200).json({
       status: "success",
@@ -197,6 +254,15 @@ export const partiallyUpdateContactUs = async (req, res) => {
 ============================================================ */
 export const respondToContactUs = async (req, res) => {
   try {
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
+
     const { message } = req.body;
 
     if (!message?.trim()) {
@@ -211,6 +277,14 @@ export const respondToContactUs = async (req, res) => {
       return res
         .status(404)
         .json({ status: "error", message: "Contact not found." });
+    }
+
+    // Verify contact belongs to user's branch
+    if (contact.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({
+        status: "error",
+        message: "Unauthorized. This contact belongs to a different branch.",
+      });
     }
 
     contact.response = {
@@ -246,14 +320,32 @@ export const respondToContactUs = async (req, res) => {
 ============================================================ */
 export const destroyContactUsById = async (req, res) => {
   try {
-    const deleted = await ContactUs.findByIdAndDelete(req.params.id);
+    const branchId = req.user?.branchId;
 
-    if (!deleted) {
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
+
+    const contact = await ContactUs.findById(req.params.id);
+    if (!contact) {
       return res.status(404).json({
         status: "error",
         message: "Contact message not found.",
       });
     }
+
+    // Verify contact belongs to user's branch
+    if (contact.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({
+        status: "error",
+        message: "Unauthorized. This contact belongs to a different branch.",
+      });
+    }
+
+    const deleted = await ContactUs.findByIdAndDelete(req.params.id);
 
     return res.status(200).json({
       status: "success",

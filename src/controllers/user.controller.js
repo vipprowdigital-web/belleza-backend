@@ -1,21 +1,45 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
+import Branch from "../models/branch.model.js";
 import {
   destroyFromCloudinary,
   uploadToCloudinary,
 } from "../utils/cloudinaryService.js";
 
-// Get Logged-in User's to these Profile
+// Get Logged-in User's Profile
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password").lean();
-    res.status(200).json({ message: "Profile fetch successfully", user });
-  } catch (error) {
-    console.error("Error feching profile: ", error.message);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
+    // Fetch branch information
+    const branch = await Branch.findById(user.branchId);
+
+    res.status(200).json({
+      message: "Profile fetched successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar || null,
+        provider: user.provider,
+      },
+      branch: branch ? {
+        id: branch._id,
+        name: branch.name,
+        slug: branch.slug,
+        subdomain: branch.subdomain,
+        customDomain: branch.customDomain,
+      } : null,
+    });
+  } catch (error) {
+    console.error("Error fetching profile: ", error.message);
     return res
       .status(500)
-      .json({ message: "Error feching profile.", error: error.message });
+      .json({ message: "Error fetching profile.", error: error.message });
   }
 };
 
@@ -24,7 +48,7 @@ export const updateProfileById = async (req, res) => {
   try {
     // ✅ Use ID from token (set by ensureAuth middleware)
     const userId = req.user?.id;
-    const { name, email, password } = req.body || {};
+    const { name, email, password, branchName, subdomain, customDomain } = req.body || {};
 
     if (!userId) {
       return res
@@ -38,6 +62,7 @@ export const updateProfileById = async (req, res) => {
     }
 
     let updatedFields = {};
+    let branchUpdatedFields = {};
     let avatarUrl = null;
 
     // ✅ Handle avatar upload (form-data)
@@ -70,8 +95,46 @@ export const updateProfileById = async (req, res) => {
     if (name && name !== user.name) updatedFields.name = name;
     if (email && email !== user.email) updatedFields.email = email;
 
+    // ✅ Handle branch updates
+    if (branchName || subdomain || customDomain) {
+      const branch = await Branch.findById(user.branchId);
+      if (!branch) {
+        return res.status(404).json({ message: "Branch not found." });
+      }
+
+      // Update branch name if provided
+      if (branchName && branchName !== branch.name) {
+        branchUpdatedFields.name = branchName;
+        branchUpdatedFields.slug = branchName.toLowerCase().replace(/\s+/g, '-');
+      }
+
+      // Check if subdomain already exists (if being changed)
+      if (subdomain && subdomain.toLowerCase() !== branch.subdomain) {
+        const existingSubdomain = await Branch.findOne({ 
+          subdomain: subdomain.toLowerCase(),
+          _id: { $ne: branch._id }
+        });
+        if (existingSubdomain) {
+          return res.status(400).json({ message: "Subdomain already taken." });
+        }
+        branchUpdatedFields.subdomain = subdomain.toLowerCase();
+      }
+
+      // Check if custom domain already exists (if being changed)
+      if (customDomain && customDomain !== branch.customDomain) {
+        const existingDomain = await Branch.findOne({ 
+          customDomain: customDomain,
+          _id: { $ne: branch._id }
+        });
+        if (existingDomain) {
+          return res.status(400).json({ message: "Custom domain already in use." });
+        }
+        branchUpdatedFields.customDomain = customDomain;
+      }
+    }
+
     // ✅ If nothing changed
-    if (Object.keys(updatedFields).length === 0) {
+    if (Object.keys(updatedFields).length === 0 && Object.keys(branchUpdatedFields).length === 0) {
       return res.status(400).json({ message: "No changes detected." });
     }
 
@@ -82,9 +145,34 @@ export const updateProfileById = async (req, res) => {
       { new: true, runValidators: true, select: "-password" }
     );
 
+    // ✅ Update branch if there are changes
+    let updatedBranch = null;
+    if (Object.keys(branchUpdatedFields).length > 0) {
+      updatedBranch = await Branch.findByIdAndUpdate(
+        user.branchId,
+        { $set: branchUpdatedFields },
+        { new: true }
+      );
+    } else {
+      updatedBranch = await Branch.findById(user.branchId);
+    }
+
     return res.status(200).json({
-      message: "✅ User profile updated successfully.",
-      data: updatedUser,
+      message: "✅ User profile and branch information updated successfully.",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar || null,
+        provider: updatedUser.provider,
+      },
+      branch: updatedBranch ? {
+        id: updatedBranch._id,
+        name: updatedBranch.name,
+        slug: updatedBranch.slug,
+        subdomain: updatedBranch.subdomain,
+        customDomain: updatedBranch.customDomain,
+      } : null,
     });
   } catch (error) {
     console.error("❌ Error updating user profile:", error);

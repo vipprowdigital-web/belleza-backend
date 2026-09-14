@@ -29,29 +29,45 @@ Register a new user account.
 {
   "name": "Piyush Kumar",
   "email": "piyush@example.com",
-  "password": "123456"
+  "password": "123456",
+  "branchName": "Belleza Beauty School",
+  "subdomain": "belleza-main",
+  "customDomain": "belleza.com"
 }
-````
+```
+
+**Request Fields:**
+- `name` (required): User's full name
+- `email` (required): User's email address
+- `password` (required): User's password
+- `branchName` (required): Name of the branch/organization
+- `subdomain` (required): Unique subdomain for the branch (lowercase, no spaces)
+- `customDomain` (optional): Custom domain name for the branch
 
 **Response (201):**
 
 ```json
 {
-  "success": true,
-  "message": "User registered successfully",
+  "message": "User registered successfully.",
   "user": {
-    "_id": "670f21e412f4f23cfa3c6d2e",
+    "id": "670f21e412f4f23cfa3c6d2e",
     "name": "Piyush Kumar",
-    "email": "piyush@example.com"
-  },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5..."
+    "email": "piyush@example.com",
+    "branchId": "670f21e412f4f23cfa3c6d2f",
+    "branchName": "Belleza Beauty School",
+    "subdomain": "belleza-main",
+    "customDomain": "belleza.com"
+  }
 }
 ```
 
 **Errors:**
 
-* `400` → Missing fields or invalid email format
-* `409` → Email already exists
+* `400` → Missing required fields (name, email, password, branchName, subdomain)
+* `400` → Email already registered
+* `400` → Subdomain already taken
+* `400` → Custom domain already in use
+* `500` → Internal server error
 
 ---
 

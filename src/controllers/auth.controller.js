@@ -1,28 +1,57 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import Branch from "../models/branch.model.js";
 
 // Register a New User
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, branchName, subdomain, customDomain } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required." });
+    // Validate all required fields
+    if (!name || !email || !password || !branchName || !subdomain) {
+      return res.status(400).json({ 
+        message: "All fields are required (name, email, password, branchName, subdomain)." 
+      });
     }
 
+    // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    // Check if subdomain already exists
+    const existingSubdomain = await Branch.findOne({ subdomain: subdomain.toLowerCase() });
+    if (existingSubdomain) {
+      return res.status(400).json({ message: "Subdomain already taken" });
+    }
+
+    // Check if custom domain already exists (if provided)
+    // if (customDomain) {
+    //   const existingDomain = await Branch.findOne({ customDomain });
+    //   if (existingDomain) {
+    //     return res.status(400).json({ message: "Custom domain already in use" });
+    //   }
+    // }
+
+    // Create a new branch
+    const branch = await Branch.create({
+      name: branchName,
+      slug: branchName.toLowerCase().replace(/\s+/g, '-'),
+      subdomain: subdomain.toLowerCase(),
+      customDomain: customDomain || null,
+    });
+
+    // Hash password and create user with branchId
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       provider: "local",
+      branchId: branch._id,
     });
 
     res.status(201).json({
@@ -31,6 +60,15 @@ export const register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar || null,
+        provider: user.provider,
+      },
+      branch: {
+        id: branch._id,
+        name: branch.name,
+        slug: branch.slug,
+        subdomain: branch.subdomain,
+        customDomain: branch.customDomain,
       },
     });
   } catch (error) {
@@ -87,6 +125,9 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    // Fetch branch information
+    const branch = await Branch.findById(user.branchId);
+
     return res.status(200).json({
       status: "success",
       message: "Login successful.",
@@ -95,7 +136,16 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar || null,
+        provider: user.provider,
       },
+      branch: branch ? {
+        id: branch._id,
+        name: branch.name,
+        slug: branch.slug,
+        subdomain: branch.subdomain,
+        customDomain: branch.customDomain,
+      } : null,
     });
   } catch (error) {
     console.error("Login error:", error);

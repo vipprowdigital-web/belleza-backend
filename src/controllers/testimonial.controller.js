@@ -3,17 +3,41 @@ import {
   uploadToCloudinary,
   destroyFromCloudinary,
 } from "../utils/cloudinaryService.js";
+import Branch from "../models/branch.model.js";
 
 /* ============================
-   🟢 PUBLIC CONTROLLERS
+   🟢 FRONTEND CONTROLLERS (Display Data)
 ============================ */
-export const getAllActiveTestimonials = async (req, res) => {
+
+/**
+ * Get testimonials for frontend by subdomain (branch-specific, active only)
+ */
+export const getFrontendTestimonials = async (req, res) => {
   try {
+    const { subdomain } = req.query;
     const page = +req.query.page || 1;
     const limit = +req.query.limit || 10;
     const search = req.query.search?.trim() || "";
 
-    const filter = { isActive: true };
+    // Validate subdomain
+    if (!subdomain) {
+      return res.status(400).json({
+        success: false,
+        message: "Subdomain is required as query parameter.",
+      });
+    }
+
+    // Find branch by subdomain
+    const branch = await Branch.findOne({ subdomain: subdomain.toLowerCase() }).lean();
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: "Branch not found.",
+      });
+    }
+
+    const filter = { isActive: true, branchId: branch._id };
 
     if (search) {
       filter.$or = [
@@ -30,12 +54,13 @@ export const getAllActiveTestimonials = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .select(
-        "name designation short_description description shortDescription avatar thumbnail rating video_link read_time createdAt",
+        "name designation description avatar thumbnail rating video_link read_time createdAt",
       )
       .lean();
 
     res.status(200).json({
       success: true,
+      message: "Testimonials fetched successfully.",
       data: testimonials,
       pagination: {
         total,
@@ -50,63 +75,48 @@ export const getAllActiveTestimonials = async (req, res) => {
   }
 };
 
-/* =====================================
-   🔍 Get Testimonial by ID
-   ===================================== */
-export const getActiveTestimonialById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const testimonial = await Testimonial.findById(id)
-      .where({ isActive: true })
-      .populate("createdBy updatedBy", "name email")
-      .lean();
+/* ============================
+   🔒 ADMIN CONTROLLERS (Manage Data)
+============================ */
 
-    if (!testimonial) {
-      return res.status(404).json({ message: "Testimonial not found." });
-    }
-
-    return res.status(200).json({
-      message: "Testimonial fetched successfully.",
-      data: testimonial,
-    });
-  } catch (error) {
-    console.error("Error fetching testimonial:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Internal Error", error: error.message });
-  }
-};
-
-/* =====================================
-   🔒 Get All Testimonials (Admin)
-   ===================================== */
+/**
+ * Get all testimonials for admin (branch-specific, all statuses)
+ */
 export const getTestimonials = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || "";
+    const search = req.query.search?.trim() || "";
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
     const skip = (page - 1) * limit;
+    const branchId = req.user?.branchId;
 
-    const filter = search
-      ? {
-          $or: [
-            { name: new RegExp(search, "i") },
-            { designation: new RegExp(search, "i") },
-            { description: new RegExp(search, "i") },
-          ],
-        }
-      : {};
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
+    // Build search filter with branchId
+    const filter = { branchId };
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { designation: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const total = await Testimonial.countDocuments(filter);
 
     const testimonials = await Testimonial.find(filter)
       .populate("createdBy updatedBy", "name email")
-      .sort({ createdAt: -1 })
+      .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit)
       .lean();
 
     return res.status(200).json({
+      success: true,
       message: "Testimonials fetched successfully.",
       data: testimonials,
       pagination: {
@@ -118,20 +128,28 @@ export const getTestimonials = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching testimonials:", error.message);
-    return res
-      .status(500)
-      .json({ message: "Internal Error", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
-/* =====================================
-   🔍 Get Testimonial by ID
-   ===================================== */
-
+/**
+ * Get single testimonial by ID
+ */
 export const getTestimonialById = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     const testimonial = await Testimonial.findById(id)
+      .where({ branchId })
       .populate("createdBy updatedBy", "name email")
       .lean();
 
@@ -157,6 +175,11 @@ export const getTestimonialById = async (req, res) => {
 export const createTestimonial = async (req, res) => {
   try {
     const uploaded = { avatar: null, thumbnail: null };
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
 
     const { name, rating, isActive } = req.body;
 
@@ -197,6 +220,7 @@ export const createTestimonial = async (req, res) => {
       read_time: req.body.read_time ?? "2 min",
       video_link: req.body.video_link ?? null,
       isActive,
+      branchId,
       createdBy: req.user._id,
     });
 
@@ -218,12 +242,23 @@ export const createTestimonial = async (req, res) => {
 export const updateTestimonial = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     const { name, designation, description, video_link, rating, isActive } =
       req.body;
 
     const testimonial = await Testimonial.findById(id);
     if (!testimonial) {
       return res.status(404).json({ message: "Testimonial not found." });
+    }
+
+    // Verify testimonial belongs to user's branch
+    if (testimonial.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({ message: "Unauthorized. This testimonial belongs to a different branch." });
     }
 
     let avatarUrl = testimonial.avatar;
@@ -297,10 +332,20 @@ export const updateTestimonial = async (req, res) => {
 export const partiallyUpdateTestimonial = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
 
     const testimonial = await Testimonial.findById(id);
     if (!testimonial) {
       return res.status(404).json({ message: "Testimonial not found." });
+    }
+
+    // Verify testimonial belongs to user's branch
+    if (testimonial.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({ message: "Unauthorized. This testimonial belongs to a different branch." });
     }
 
     // Apply partial updates
@@ -329,9 +374,20 @@ export const partiallyUpdateTestimonial = async (req, res) => {
 export const destroyTestimonialById = async (req, res) => {
   try {
     const { id } = req.params;
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     const testimonial = await Testimonial.findById(id);
     if (!testimonial) {
       return res.status(404).json({ message: "Testimonial not found." });
+    }
+
+    // Verify testimonial belongs to user's branch
+    if (testimonial.branchId.toString() !== branchId.toString()) {
+      return res.status(403).json({ message: "Unauthorized. This testimonial belongs to a different branch." });
     }
 
     // Delete avatar from Cloudinary if exists

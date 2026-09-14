@@ -4,25 +4,29 @@ import upload from "../config/multer.js";
 
 import {
   getAllGallery,
-  getAllActiveGallery,
   getGalleryById,
   createGallery,
   updateGallery,
   partiallyUpdateGallery,
   destroyGalleryById,
+  getFrontendGalleries,
 } from "../controllers/gallery.controller.js";
 
 const router = Router();
 
 /* ================================
-   🟢 Public Routes
+   🟢 FRONTEND ROUTES (Display Data - No Auth Required)
    ================================ */
 
-// ✅ Public - Get all active galleries (only active ones)
-router.get("/active", getAllActiveGallery);
+// ✅ Frontend - Get active galleries by subdomain
+router.get("/frontend", getFrontendGalleries);
 
-// ✅ Public - Get single gallery by ID
-router.get("/:id", getGalleryById);
+/* ================================
+   🔒 ADMIN ROUTES (Manage Data - Auth Required)
+   ================================ */
+
+// ✅ Get all galleries (with pagination + search, branch-specific, all statuses)
+router.get("/", ensureAuth, getAllGallery);
 
 /* ================================
    🔒 Admin/Protected Routes (Require Auth)

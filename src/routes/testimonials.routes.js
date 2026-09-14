@@ -8,23 +8,22 @@ import {
   updateTestimonial,
   partiallyUpdateTestimonial,
   destroyTestimonialById,
-  getAllActiveTestimonials,
-  getActiveTestimonialById,
+  getFrontendTestimonials,
 } from "../controllers/testimonial.controller.js";
 
 const router = Router();
 
 /* ================================
-   🟢 PUBLIC ROUTES
+   🟢 FRONTEND ROUTES (Display Data - No Auth Required)
 ================================ */
-router.get("/public", getAllActiveTestimonials);
-router.get("/public/:id", getActiveTestimonialById);
+// ✅ Get testimonials for frontend by subdomain
+router.get("/frontend", getFrontendTestimonials);
 
 /* ================================
-   🔒 ADMIN ROUTES
+   🔒 ADMIN ROUTES (Manage Data - Auth Required)
 ================================ */
 
-// ✅ Get all testimonials (paginated)
+// ✅ Get all testimonials (paginated, branch-specific, all statuses)
 router.get("/", ensureAuth, getTestimonials);
 
 // ✅ Get testimonial by ID

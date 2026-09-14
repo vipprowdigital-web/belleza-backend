@@ -135,6 +135,13 @@ const contactUsSchema = new Schema(
         respondedAt: { type: Date, default: Date.now },
       },
     ],
+
+    // Branch Link
+    branchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true, 
+    }
   },
   {
     timestamps: true,

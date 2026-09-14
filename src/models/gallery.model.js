@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const {Schema} = mongoose;
+
 // ✅ Define schema with validation and performance optimizations
 const gallerySchema = new mongoose.Schema(
   {
@@ -56,6 +58,13 @@ const gallerySchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
+    // Branch Link
+    branchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true, 
+    }
   },
   {
     timestamps: true,

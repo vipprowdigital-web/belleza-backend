@@ -1,13 +1,21 @@
 import { Router } from "express";
 import { ensureAuth } from "../middleware/authMiddleware.js";
-import { getAppConfig, getPublicAppConfig, modifyAppConfig } from "../controllers/appConfig.controller.js";
+import { getAppConfig, modifyAppConfig, getFrontendAppConfig } from "../controllers/appConfig.controller.js";
 
 const router = Router();
 
-// 🟢 Public: Get latest App Config (no auth)
-router.get("/public", getPublicAppConfig);
+/* ================================
+   🟢 FRONTEND ROUTES (Display Data - No Auth Required)
+   ================================ */
 
-// 🔒 Admin: Get / Update App Config
+// ✅ Get app config for frontend by subdomain
+router.get("/frontend", getFrontendAppConfig);
+
+/* ================================
+   🔒 ADMIN ROUTES (Manage Data - Auth Required)
+   ================================ */
+
+// ✅ Admin: Get / Update App Config (branch-specific)
 router.get("/", ensureAuth, getAppConfig);
 router.post("/", ensureAuth, modifyAppConfig);
 

@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const {Schema} =  mongoose;
+
 const appconfigSchema = new mongoose.Schema(
   {
     appName: {
@@ -56,6 +58,13 @@ const appconfigSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+
+    // Branch Link
+    branchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true, 
+    }
   },
   {
     timestamps: true,

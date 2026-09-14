@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const {Schema} = mongoose;
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -26,6 +28,11 @@ const userSchema = new mongoose.Schema(
     googleId: {
       type: String,
     },
+    branchId: {
+      type: Schema.Types.ObjectId,
+      ref: "Branch",
+      required: true,
+    }
   },
   {
     timestamps: true,

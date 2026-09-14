@@ -1,39 +1,74 @@
 import appConfig from "../models/appConfig.model.js";
+import Branch from "../models/branch.model.js";
 
 /**
- * 🔓 Get latest App Config (Public)
+ * Get app config for frontend by subdomain (branch-specific)
  */
-export const getPublicAppConfig = async (req, res) => {
+export const getFrontendAppConfig = async (req, res) => {
   try {
-    const latestConfig = await appConfig
-      .findOne()
-      .sort({ createdAt: -1 })
-      .lean();
+    const { subdomain } = req.query;
 
-    if (!latestConfig) {
-      return res.status(404).json({ message: "App Config not found." });
+    console.log("Subdomain: ", subdomain);
+
+    // Validate subdomain
+    if (!subdomain) {
+      return res.status(400).json({
+        status: "error",
+        message: "Subdomain is required as query parameter.",
+      });
+    }
+
+    // Find branch by subdomain
+    const branch = await Branch.findOne({ subdomain: subdomain.toLowerCase() }).lean();
+
+    if (!branch) {
+      return res.status(404).json({
+        status: "error",
+        message: "Branch not found.",
+      });
+    }
+
+    console.log("Branch: ", branch);
+
+    const config = await appConfig.findOne({ branchId: branch._id }).lean();
+
+    if (!config) {
+      return res.status(404).json({
+        status: "error",
+        message: "App configuration not found for this branch.",
+      });
     }
 
     return res.status(200).json({
-      message: "Public App Config fetched successfully.",
-      data: latestConfig,
+      status: "success",
+      message: "App Config fetched successfully.",
+      data: config,
     });
   } catch (error) {
-    console.error("❌ Error fetching public app config:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error fetching app config:", error.message);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
 /**
- * 🔓 Get latest App Config (Protected)
+ * Get app config for admin (branch-specific)
  */
-
-// Get
 export const getAppConfig = async (req, res) => {
   try {
-    const app_config_data = await appConfig.findOne();
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({
+        status: "error",
+        message: "Branch ID not found. Please login again.",
+      });
+    }
+
+    const app_config_data = await appConfig.findOne({ branchId });
 
     if (!app_config_data) {
       return res.status(404).json({
@@ -49,8 +84,17 @@ export const getAppConfig = async (req, res) => {
   }
 };
 
+/**
+ * Modify/update app config for admin (branch-specific)
+ */
 export const modifyAppConfig = async (req, res) => {
   try {
+    const branchId = req.user?.branchId;
+
+    if (!branchId) {
+      return res.status(401).json({ message: "Branch ID not found. Please login again." });
+    }
+
     // Accept ALL fields dynamically
     const updateData = req.body;
 
@@ -61,12 +105,15 @@ export const modifyAppConfig = async (req, res) => {
         .json({ message: "App Name, Email & Phone Number are required" });
     }
 
-    // Check existing config
-    let app = await appConfig.findOne();
+    // Check existing config for this branch
+    let app = await appConfig.findOne({ branchId });
 
     if (!app) {
-      // Create New Config
-      app = await appConfig.create(updateData);
+      // Create New Config for this branch
+      app = await appConfig.create({
+        ...updateData,
+        branchId,
+      });
     } else {
       // Update Existing
       app = await appConfig.findByIdAndUpdate(app._id, updateData, {

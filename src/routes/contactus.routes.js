@@ -13,28 +13,33 @@ import {
 
 const router = Router();
 
-/* ---------------------- PUBLIC ROUTE ---------------------- */
-// Create new contact message (Public)
-router.post("/", createContactUs);
+/* ================================
+   🟢 FRONTEND ROUTES (Submit & Display - No Auth Required)
+   ================================ */
 
-/* ---------------------- ADMIN ROUTES ---------------------- */
+// ✅ Frontend - Submit contact form by subdomain (public submission)
+router.post("/frontend", createContactUs);
 
-// Get paginated contact messages
+/* ================================
+   🔒 ADMIN ROUTES (Manage Submissions - Auth Required)
+   ================================ */
+
+// ✅ Get paginated contact messages (branch-specific)
 router.get("/", ensureAuth, getAllContactUs);
 
-// Get contact message by ID
+// ✅ Get contact message by ID (branch-specific)
 router.get("/:id", ensureAuth, getContactUsById);
 
-// Full Update Contact (PUT)
+// ✅ Full Update Contact (PUT, branch-specific)
 router.put("/:id", ensureAuth, updateContactUs);
 
-// PARTIAL UPDATE Contact (PATCH) - update status, mark read, etc.
+// ✅ PARTIAL UPDATE Contact (PATCH, branch-specific)
 router.patch("/:id", ensureAuth, partiallyUpdateContactUs);
 
-// Admin respond to contact message
+// ✅ Admin respond to contact message (branch-specific)
 router.post("/respond/:id", ensureAuth, respondToContactUs);
 
-// Delete contact message
+// ✅ Delete contact message (branch-specific)
 router.delete("/:id", ensureAuth, destroyContactUsById);
 
 export default router;
