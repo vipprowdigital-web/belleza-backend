@@ -167,7 +167,7 @@ app.use(`${routePrefix}/upload`, uploadRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
     status: "success",
-    message: "🚀 API is running successfully!",
+    message: "API is running successfully!",
     version: "v1.0.0",
     env: process.env.NODE_ENV,
   });

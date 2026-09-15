@@ -18,6 +18,9 @@ export const getProfile = async (req, res) => {
     // Fetch branch information
     const branch = await Branch.findById(user.branchId);
 
+    console.log("Data from get profile: ", user);
+    console.log("Data from branch: ", branch);
+
     res.status(200).json({
       message: "Profile fetched successfully",
       user: {
@@ -26,6 +29,7 @@ export const getProfile = async (req, res) => {
         email: user.email,
         avatar: user.avatar || null,
         provider: user.provider,
+        createdAt: user.createdAt
       },
       branch: branch ? {
         id: branch._id,
@@ -49,6 +53,8 @@ export const updateProfileById = async (req, res) => {
     // ✅ Use ID from token (set by ensureAuth middleware)
     const userId = req.user?.id;
     const { name, email, password, branchName, subdomain, customDomain } = req.body || {};
+
+    // console.log("Updated profile: ", userId);
 
     if (!userId) {
       return res
@@ -120,15 +126,8 @@ export const updateProfileById = async (req, res) => {
         branchUpdatedFields.subdomain = subdomain.toLowerCase();
       }
 
-      // Check if custom domain already exists (if being changed)
+      // Note: Multiple admins can use the same custom domain, so we don't validate uniqueness for customDomain
       if (customDomain && customDomain !== branch.customDomain) {
-        const existingDomain = await Branch.findOne({ 
-          customDomain: customDomain,
-          _id: { $ne: branch._id }
-        });
-        if (existingDomain) {
-          return res.status(400).json({ message: "Custom domain already in use." });
-        }
         branchUpdatedFields.customDomain = customDomain;
       }
     }
@@ -145,7 +144,7 @@ export const updateProfileById = async (req, res) => {
       { new: true, runValidators: true, select: "-password" }
     );
 
-    // ✅ Update branch if there are changes
+    // Update branch if there are changes
     let updatedBranch = null;
     if (Object.keys(branchUpdatedFields).length > 0) {
       updatedBranch = await Branch.findByIdAndUpdate(
@@ -158,7 +157,7 @@ export const updateProfileById = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: "✅ User profile and branch information updated successfully.",
+      message: "User profile and branch information updated successfully.",
       user: {
         id: updatedUser._id,
         name: updatedUser.name,

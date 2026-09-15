@@ -28,13 +28,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Subdomain already taken" });
     }
 
-    // Check if custom domain already exists (if provided)
-    // if (customDomain) {
-    //   const existingDomain = await Branch.findOne({ customDomain });
-    //   if (existingDomain) {
-    //     return res.status(400).json({ message: "Custom domain already in use" });
-    //   }
-    // }
+    // Note: Multiple admins can use the same custom domain, so we don't validate uniqueness for customDomain
 
     // Create a new branch
     const branch = await Branch.create({
