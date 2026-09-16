@@ -12,7 +12,7 @@ export const createContactUs = async (req, res) => {
   try {
     const { name, phone, message, courseName, preferredLocation, subdomain } = req.body;
 
-    console.log("Req data: ", req.body);
+    // console.log("Req data: ", req.body);
 
     // Validate required fields
     if (!name || !phone) {
@@ -33,7 +33,7 @@ export const createContactUs = async (req, res) => {
     // Find branch by subdomain
     const branch = await Branch.findOne({ subdomain: subdomain.toLowerCase() }).lean();
 
-    console.log("Branch: ", branch);
+    // console.log("Branch: ", branch);
 
     if (!branch) {
       return res.status(404).json({
@@ -42,7 +42,7 @@ export const createContactUs = async (req, res) => {
       });
     }
 
-    console.log("Branch: ", branch);
+    // console.log("Branch: ", branch);
 
     // Create contact us submission
     const contact = await ContactUs.create({
@@ -91,11 +91,11 @@ export const getAllContactUs = async (req, res) => {
       });
     }
 
-    console.log("Branch id: ", branchId);
+    // console.log("Branch id: ", branchId);
 
     const total = await ContactUs.countDocuments({ branchId });
 
-    console.log("Total number of contacts: ", total);
+    // console.log("Total number of contacts: ", total);
     
     const messages = await ContactUs.find({ branchId })
     .sort({ createdAt: -1 })
@@ -103,7 +103,7 @@ export const getAllContactUs = async (req, res) => {
     .limit(limit)
     .lean();
     
-    console.log("Data from contact: ", messages);
+    // console.log("Data from contact: ", messages);
 
     return res.status(200).json({
       status: "success",

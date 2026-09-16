@@ -8,7 +8,7 @@ export const getFrontendAppConfig = async (req, res) => {
   try {
     const { subdomain } = req.query;
 
-    console.log("Subdomain: ", subdomain);
+    // console.log("Subdomain: ", subdomain);
 
     // Validate subdomain
     if (!subdomain) {
@@ -28,7 +28,7 @@ export const getFrontendAppConfig = async (req, res) => {
       });
     }
 
-    console.log("Branch: ", branch);
+    // console.log("Branch: ", branch);
 
     const config = await appConfig.findOne({ branchId: branch._id }).lean();
 

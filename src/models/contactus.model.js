@@ -84,6 +84,7 @@ const contactUsSchema = new Schema(
       enum: courseNames,
       required: true,
     },
+    
     preferredLocation: {
       type: String,
       enum: ["rudrapur", "dehradun", "bajpur", "haldwani"],

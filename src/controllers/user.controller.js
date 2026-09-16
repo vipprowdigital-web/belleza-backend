@@ -18,8 +18,8 @@ export const getProfile = async (req, res) => {
     // Fetch branch information
     const branch = await Branch.findById(user.branchId);
 
-    console.log("Data from get profile: ", user);
-    console.log("Data from branch: ", branch);
+    // console.log("Data from get profile: ", user);
+    // console.log("Data from branch: ", branch);
 
     res.status(200).json({
       message: "Profile fetched successfully",
