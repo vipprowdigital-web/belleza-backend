@@ -43,14 +43,22 @@ dotenv.config();
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const routePrefix = "/api/v1";
+// Comma-separated list of branch landing page URLs, e.g.
+// LANDING_PAGE_URLS=https://dehradun.bellezaschool.com,https://rudrapur.bellezaschool.com
+const landingPageUrls = (process.env.LANDING_PAGE_URLS || "")
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
   process.env.NEXT_FRONTEND_URL, // Next.js production site
   process.env.ADMIN_FRONTEND_URL, // Admin production site
   process.env.REACT_NATIVE_FRONTEND_URL, // React Native local
-  process.env.LANDING_PAGE_URL,
+  process.env.LANDING_PAGE_URL, // kept for backward compatibility
+  ...landingPageUrls, // all branch landing pages
   "http://192.168.29.175:3000",
   "http://localhost:5175",
-];
+].filter(Boolean);
 
 // ===============================================
 // 🧱 Core Middleware
