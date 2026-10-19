@@ -2,31 +2,6 @@ import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
-const courseNames = [
-  "Master in Cosmetology",
-  "Diploma in Cosmetology",
-  "Certificate in Cosmetology",
-  "Certificate in Self Grooming",
-  "Certificate in International Makeup Artistry",
-  "Certificate in Professional Makeup Artistry",
-  "Certificate in Makeup Artistry",
-  "Certificate in International Nail Artistry",
-  "Certificate in Professional Nail Artistry",
-  "Certificate in Nail Artistry",
-  "Certificate in Permanent Hair Extension",
-  "Certificate in Barbering",
-  "Certificate in International Hair Styling",
-  "Certificate in Hair Styling",
-  "Certificate in Professional Hair Craftsmanship",
-  "Certificate in Hair Craftsmanship",
-  "Certificate in Eye Lashes Extension",
-  "Certificate in Aesthetician",
-  "Certificate in Beauty Therapist",
-  "Certificate in Skincare",
-];
-
-const courseCategories = ["combo", "makeup", "nails", "hair", "beauty"];
-
 // ===============================================
 // 🧩 Contact Us Schema (Supports Course & Franchise Forms)
 // ===============================================
@@ -79,9 +54,9 @@ const contactUsSchema = new Schema(
     //   maxlength: 150,
     // },
 
-    courseName: {
-      type: String,
-      enum: courseNames,
+    course: {
+      type: Schema.Types.ObjectId,
+      ref: "Course",
       required: true,
     },
     

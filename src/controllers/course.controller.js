@@ -238,7 +238,7 @@ export const getCourseById = async (req, res) => {
 
 export const getAllActiveCoursesNames = async (req, res) => {
   try {
-    const course = await Course.find().select("title _id");
+    const course = await Course.find({ isActive: true }).select("title _id");
 
     if (!course)
       return res

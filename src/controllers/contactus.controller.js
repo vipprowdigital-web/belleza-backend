@@ -1,5 +1,6 @@
 import ContactUs from "../models/contactus.model.js";
 import Branch from "../models/branch.model.js";
+import Course from "../models/courses/course.model.js";
 
 /* ============================================================
    � FRONTEND CONTROLLERS (Submit Data - No Auth Required)
@@ -10,7 +11,7 @@ import Branch from "../models/branch.model.js";
  */
 export const createContactUs = async (req, res) => {
   try {
-    const { name, phone, message, courseName, preferredLocation, subdomain } = req.body;
+    const { name, phone, message, course, preferredLocation, subdomain } = req.body;
 
     // console.log("Req data: ", req.body);
 
@@ -27,6 +28,23 @@ export const createContactUs = async (req, res) => {
       return res.status(400).json({
         status: "error",
         message: "Subdomain is required.",
+      });
+    }
+
+    // Validate course is a real, active course
+    if (!course) {
+      return res.status(400).json({
+        status: "error",
+        message: "Course is required.",
+      });
+    }
+
+    const courseDoc = await Course.findById(course).select("_id").lean();
+
+    if (!courseDoc) {
+      return res.status(404).json({
+        status: "error",
+        message: "Selected course not found.",
       });
     }
 
@@ -48,7 +66,7 @@ export const createContactUs = async (req, res) => {
     const contact = await ContactUs.create({
       name,
       phone: phone || null,
-      courseName,
+      course: courseDoc._id,
       preferredLocation,
       message,
       ipAddress: req.ip,
@@ -98,6 +116,7 @@ export const getAllContactUs = async (req, res) => {
     // console.log("Total number of contacts: ", total);
     
     const messages = await ContactUs.find({ branchId })
+    .populate("course", "title slug")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
@@ -140,6 +159,7 @@ export const getContactUsById = async (req, res) => {
 
     const contact = await ContactUs.findById(req.params.id)
       .where({ branchId })
+      .populate("course", "title slug")
       .lean();
 
     if (!contact) {
