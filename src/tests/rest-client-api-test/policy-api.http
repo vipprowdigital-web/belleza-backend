@@ -8,6 +8,11 @@ GET {{baseUrl}}/policy/public/69007aa57bc127404d356930
 Accept: application/json
 
 
+### Get Active Policy by slug - Public
+GET {{baseUrl}}/policy/public/privacy-policy
+Accept: application/json
+
+
 ### Get All Policies - Protected
 GET {{baseUrl}}/policy/admin
 Authorization: Bearer {{token}}

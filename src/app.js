@@ -56,7 +56,8 @@ const allowedOrigins = [
   process.env.REACT_NATIVE_FRONTEND_URL, // React Native local
   process.env.LANDING_PAGE_URL, // kept for backward compatibility
   ...landingPageUrls, // all branch landing pages
-  "http://192.168.29.175:3000",
+  "http://localhost:3000",
+  "http://localhost:5173",
   "http://localhost:5175",
 ].filter(Boolean);
 
